@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html class="h-full bg-slate-100" lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SSCP - Tablero de Control de Indicadores de Auditoría</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#1e88e5', 600: '#0284c7', 700: '#0369a1' },
+            semaphore: { red: '#DC2626', yellow: '#D97706', green: '#16A34A', gray: '#64748B' }
+          }
+        }
+      }
+    }
+</script>
+<style data-purpose="custom-scrollbars">
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+<style data-purpose="component-transitions">
+    .card-transition { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+</style>
+</head>
+<body class="min-h-full font-sans antialiased text-slate-800 bg-[#f4f7fa] flex flex-col">
+
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs" data-purpose="global-filter-header">
+<div class="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="h-9 w-9 rounded-lg bg-sky-600 flex items-center justify-center text-white font-bold shadow-sm"><span>S</span></div>
+<div>
+<h1 class="text-base font-bold text-slate-900 leading-none">SSCP · Auditoría de Indicadores</h1>
+<p class="text-xs text-slate-500 mt-0.5">Sistema de Seguimiento y Calidad Prestacional</p>
+</div>
+</div>
+
+<form class="flex flex-wrap items-center gap-2 sm:gap-3" data-purpose="filters-form" id="filter-form" onsubmit="event.preventDefault();">
+<div class="w-full sm:w-auto min-w-[180px]">
+<label class="sr-only" for="filter-group">Grupo</label>
+<select class="w-full text-xs sm:text-sm font-medium border-slate-300 rounded-lg py-2 pl-3 pr-8 bg-slate-50 hover:bg-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-700 transition-colors" id="filter-group">
+<option value="">Todos los grupos</option>
+</select>
+</div>
+<div class="w-full sm:w-auto min-w-[180px]">
+<label class="sr-only" for="filter-unit">Unidad</label>
+<select class="w-full text-xs sm:text-sm font-medium border-slate-300 rounded-lg py-2 pl-3 pr-8 bg-slate-50 hover:bg-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-700 transition-colors" id="filter-unit">
+<option value="">Todas las unidades</option>
+</select>
+</div>
+<div class="w-full sm:w-auto min-w-[170px]">
+<label class="sr-only" for="filter-status">Semáforo</label>
+<select class="w-full text-xs sm:text-sm font-medium border-slate-300 rounded-lg py-2 pl-3 pr-8 bg-slate-50 hover:bg-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-700 transition-colors" id="filter-status">
+<option value="">Todos los semáforos</option>
+<option value="Verde">🟢 Verde (Conforme)</option>
+<option value="Amarillo">🟡 Amarillo (En observación)</option>
+<option value="Rojo">🔴 Rojo (Crítico)</option>
+<option value="Gris">⚪ Gris (Sin dato)</option>
+</select>
+</div>
+<div class="relative flex-1 min-w-[200px] w-full sm:w-auto">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 21l-4.35-4.35m1.85-5.65a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</span>
+<input class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-lg border-slate-300 bg-slate-50 hover:bg-white focus:bg-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-700 placeholder:text-slate-400 transition-colors" id="search-input" placeholder="Buscar indicador..." type="search"/>
+</div>
+<button class="px-5 py-2 text-xs sm:text-sm font-semibold rounded-lg text-white bg-sky-600 hover:bg-sky-700 active:bg-sky-800 shadow-sm transition duration-150 flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1" type="button" id="btn-clear">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>Limpiar</span>
+</button>
+</form>
+</div>
+</div>
+</header>
+
+<main class="flex-1 max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
+  <div id="error-banner" class="hidden bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200"></div>
+
+<section aria-label="Métricas de Resumen" data-purpose="kpi-summary-grid">
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4" id="kpi-container">
+  <!-- Los KPIs se renderizarán dinámicamente -->
+</div>
+</section>
+
+<section aria-label="Tarjetas de Unidades de Salud" data-purpose="units-cards-container">
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4" id="cards-container">
+  <!-- Las tarjetas se renderizarán dinámicamente -->
+</div>
+</section>
+</main>
+
+<footer class="bg-white border-t border-slate-200 mt-auto py-3 text-center text-xs text-slate-400">
+<div class="max-w-[1920px] mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+<div>SSCP v2.4 · Tablero Integral de Auditoría Médica y Gestión de Datos</div>
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Conexión activa</span>
+<span id="last-sync">Última sincronización: --:--</span>
+</div>
+</div>
+</footer>
+
+<script>
+(function() {
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTYm3SS_SIKzD6bkD6BlUiAwVh1sH0-dr5wmWWfoRvhQiA_L3bgOg_7IjPyp0g7W2Wh631iepFwWzrp/pub?gid=1976830040&single=true&output=csv";
+
+  // Mapeo de las columnas del CSV según tus encabezados
+  const COLS = {
+    clave:      "Clave",
+    unidadCode: "Código unidad",
+    ente:       "Ente gestor",
+    unidad:     "Unidad",
+    grupo:      "Grupo",
+    indicador:  "Indicador",
+    semaforo:   "Semáforo"
+  };
+
+  // Parser CSV robusto
+  function parseCSV(text) {
+    const rows = []; let row = []; let field = ''; let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') { if (text[i+1] === '"') { field += '"'; i++; } else inQuotes = false; }
+        else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+        else if (c === '\r') { /* skip */ }
+        else field += c;
+      }
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    if (!rows.length) return [];
+    const headers = rows[0].map(h => h.trim());
+    return rows.slice(1).filter(r => r.some(v => v.trim() !== '')).map(r => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = (r[i] || '').trim(); });
+      return obj;
+    });
+  }
+
+  const $ = id => document.getElementById(id);
+
+  // --- PROCESAMIENTO DE DATOS ---
+  function processData(rows) {
+    const groups = new Set();
+    const units = new Map();
+    const unitData = {};
+
+    rows.forEach(row => {
+      const g = row[COLS.grupo] || 'Sin Grupo';
+      const u = row[COLS.unidad] || 'Sin Unidad';
+      const code = row[COLS.unidadCode] || 'U-00';
+      const sem = (row[COLS.semaforo] || '').toLowerCase();
+      
+      groups.add(g);
+
+      let statusKey = 'gray';
+      if (sem.includes('rojo') || sem.includes('crítico')) statusKey = 'red';
+      else if (sem.includes('amarillo') || sem.includes('observación')) statusKey = 'yellow';
+      else if (sem.includes('verde') || sem.includes('conforme')) statusKey = 'green';
+      
+      const ind = {
+        clave: row[COLS.clave] || '',
+        nombre: row[COLS.indicador] || '',
+        status: statusKey,
+        semaforoOriginal: row[COLS.semaforo] || 'Gris'
+      };
+
+      units.set(u, { code, name: u });
+
+      if (!unitData[u]) {
+        unitData[u] = { code, name: u, groups: {}, indicators: [], counts: { red: 0, yellow: 0, green: 0, gray: 0 } };
+      }
+      
+      unitData[u].counts[statusKey]++;
+
+      if (!unitData[u].groups[g]) {
+        unitData[u].groups[g] = { count: 0, red: 0, yellow: 0, green: 0, gray: 0, items: [] };
+      }
+      
+      unitData[u].groups[g].count++;
+      unitData[u].groups[g][statusKey]++;
+      unitData[u].groups[g].items.push(ind);
+      unitData[u].indicators.push(ind);
+    });
+
+    return {
+      groups: Array.from(groups).sort(),
+      units: Array.from(units.values()).sort((a, b) => a.name.localeCompare(b.name)),
+      unitData
+    };
+  }
+
+  // --- RENDERIZADO ---
+  let globalData = null;
+  let activeFilters = { grupo: '', unidad: '', semaforo: '', search: '' };
+
+  function renderKPIs(data) {
+    const container = $("kpi-container");
+    
+    // Calcular totales globales (sin filtros de semáforo, pero con grupo y unidad)
+    let totalIndicadores = 0;
+    let red = 0, yellow = 0, green = 0, gray = 0;
+    
+    data.units.forEach(u => {
+      const uData = data.unitData[u.name];
+      totalIndicadores += uData.indicators.length;
+      red += uData.counts.red;
+      yellow += uData.counts.yellow;
+      green += uData.counts.green;
+      gray += uData.counts.gray;
+    });
+
+    container.innerHTML = `
+      <article class="bg-white rounded-xl p-4 border border-slate-200 border-l-4 border-l-blue-600 shadow-xs card-transition hover:shadow-md">
+        <div class="text-3xl font-extrabold text-slate-900 tracking-tight">${data.units.length}</div>
+        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">Unidades</div>
+      </article>
+      <article class="bg-white rounded-xl p-4 border border-slate-200 border-l-4 border-l-sky-400 shadow-xs card-transition hover:shadow-md">
+        <div class="text-3xl font-extrabold text-slate-900 tracking-tight">${totalIndicadores}</div>
+        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">Indicadores</div>
+      </article>
+      <article class="bg-white rounded-xl p-4 border border-slate-200 border-l-4 border-l-red-500 shadow-xs card-transition hover:shadow-md">
+        <div class="text-3xl font-extrabold text-red-600 tracking-tight">${red}</div>
+        <div class="flex items-center gap-1.5 mt-1"><span class="w-2.5 h-2.5 rounded-full bg-red-600 inline-block"></span><span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rojo</span></div>
+      </article>
+      <article class="bg-white rounded-xl p-4 border border-slate-200 border-l-4 border-l-amber-500 shadow-xs card-transition hover:shadow-md">
+        <div class="text-3xl font-extrabold text-amber-500 tracking-tight">${yellow}</div>
+        <div class="flex items-center gap-1.5 mt-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span><span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Amarillo</span></div>
+      </article>
+      <article class="bg-white rounded-xl p-4 border border-slate-200 border-l-4 border-l-emerald-500 shadow-xs card-transition hover:shadow-md">
+        <div class="text-3xl font-extrabold text-emerald-600 tracking-tight">${green}</div>
+        <div class="flex items-center gap-1.5 mt-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span><span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Verde</span></div>
+      </article>
+      <article class="bg-white rounded-xl p-4 border border-slate-200 border-l-4 border-l-slate-400 shadow-xs card-transition hover:shadow-md">
+        <div class="text-3xl font-extrabold text-slate-600 tracking-tight">${gray}</div>
+        <div class="flex items-center gap-1.5 mt-1"><span class="w-2.5 h-2.5 rounded-full border-2 border-slate-400 bg-white inline-block"></span><span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Gris</span></div>
+      </article>
+    `;
+  }
+
+  function renderCards(data) {
+    const container = $("cards-container");
+    container.innerHTML = "";
+
+    data.units.forEach(u => {
+      const uData = data.unitData[u.name];
+      const groups = Object.entries(uData.groups);
+      
+      let html = `
+      <article class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:shadow-md card-transition flex flex-col justify-between" data-purpose="unit-card">
+        <div>
+          <header class="mb-3">
+            <h2 class="text-sm font-bold text-slate-900 leading-snug">${uData.name}</h2>
+            <p class="text-[11px] text-slate-400 font-medium">${uData.code}</p>
+          </header>
+          <div class="space-y-3">
+      `;
+
+      groups.forEach(([gName, gData]) => {
+        const total = gData.count;
+        const pRed = (gData.red / total) * 100;
+        const pYellow = (gData.yellow / total) * 100;
+        const pGreen = (gData.green / total) * 100;
+        const pGray = (gData.gray / total) * 100;
+
+        html += `
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-600 font-medium mb-1">
+                <span>${gName}</span>
+                <span class="text-slate-400">${total} ind.</span>
+              </div>
+              <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                ${gData.green > 0 ? `<div class="h-full bg-emerald-500" style="width: ${pGreen}%"></div>` : ''}
+                ${gData.yellow > 0 ? `<div class="h-full bg-amber-400" style="width: ${pYellow}%"></div>` : ''}
+                ${gData.red > 0 ? `<div class="h-full bg-red-500" style="width: ${pRed}%"></div>` : ''}
+                ${gData.gray > 0 ? `<div class="h-full bg-slate-400" style="width: ${pGray}%"></div>` : ''}
+              </div>
+            </div>
+        `;
+      });
+
+      html += `
+          </div>
+        </div>
+        <div class="pt-4 mt-2">
+          <details class="group">
+            <summary class="text-xs font-semibold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors cursor-pointer list-none">
+              <span class="group-open:hidden">▸</span>
+              <span class="hidden group-open:inline">▾</span>
+              Ver ${uData.indicators.length} indicadores
+            </summary>
+            <div class="overflow-x-auto text-[11px] mt-3">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="text-slate-400 font-bold border-b border-slate-100 uppercase tracking-wider text-[10px]">
+                    <th class="py-1.5 pr-2">CLAVE</th>
+                    <th class="py-1.5 px-2">INDICADOR</th>
+                    <th class="py-1.5 pl-2 text-right">SEMÁFORO</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+      `;
+
+      uData.indicators.forEach(ind => {
+        let badgeClass = "bg-slate-400 text-white";
+        if (ind.status === "red") badgeClass = "bg-red-600 text-white";
+        if (ind.status === "yellow") badgeClass = "bg-amber-500 text-white";
+        if (ind.status === "green") badgeClass = "bg-emerald-600 text-white";
+        
+        html += `
+                  <tr>
+                    <td class="py-2 pr-2 font-bold text-slate-700 whitespace-nowrap">${ind.clave}</td>
+                    <td class="py-2 px-2 text-slate-600">${ind.nombre}</td>
+                    <td class="py-2 pl-2 text-right">
+                      <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">${ind.semaforoOriginal}</span>
+                    </td>
+                  </tr>
+        `;
+      });
+
+      html += `
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </article>
+      `;
+
+      container.innerHTML += html;
+    });
+  }
+
+  // --- FILTRADO DE DATOS ---
+  function applyFilters() {
+    if (!globalData) return;
+
+    const fGrupo = activeFilters.grupo;
+    const fUnidad = activeFilters.unidad;
+    const fSem = activeFilters.semaforo;
+    const fSearch = activeFilters.search.toLowerCase().trim();
+
+    const filteredUnits = globalData.units.filter(u => {
+      if (fUnidad && u.name !== fUnidad) return false;
+      return true;
+    });
+
+    // Construir un conjunto de datos virtual filtrado para renderizar
+    const virtualData = { units: [], unitData: {} };
+
+    filteredUnits.forEach(u => {
+      const uData = globalData.unitData[u.name];
+      let hasMatchingIndicator = false;
+      const virtualU = { code: uData.code, name: uData.name, groups: {}, indicators: [], counts: { red: 0, yellow: 0, green: 0, gray: 0 } };
+
+      uData.indicators.forEach(ind => {
+        // Filtro de Grupo
+        if (fGrupo && !ind.grupo.includes(fGrupo)) return;
+        // Filtro de Semáforo
+        if (fSem) {
+          let match = false;
+          if (fSem === 'Verde' && ind.status === 'green') match = true;
+          if (fSem === 'Amarillo' && ind.status === 'yellow') match = true;
+          if (fSem === 'Rojo' && ind.status === 'red') match = true;
+          if (fSem === 'Gris' && ind.status === 'gray') match = true;
+          if (!match) return;
+        }
+        // Filtro de Búsqueda (clave, nombre o ente)
+        if (fSearch) {
+          const text = `${ind.clave} ${ind.nombre} ${uData.name}`.toLowerCase();
+          if (!text.includes(fSearch)) return;
+        }
+
+        hasMatchingIndicator = true;
+        virtualU.indicators.push(ind);
+        virtualU.counts[ind.status]++;
+
+        if (!virtualU.groups[ind.grupo]) {
+          virtualU.groups[ind.grupo] = { count: 0, red: 0, yellow: 0, green: 0, gray: 0, items: [] };
+        }
+        virtualU.groups[ind.grupo].count++;
+        virtualU.groups[ind.grupo][ind.status]++;
+        virtualU.groups[ind.grupo].items.push(ind);
+      });
+
+      if (hasMatchingIndicator) {
+        virtualData.units.push(u);
+        virtualData.unitData[u.name] = virtualU;
+      }
+    });
+
+    renderKPIs(virtualData);
+    renderCards(virtualData);
+  }
+
+  // --- INICIALIZACIÓN ---
+  async function loadData() {
+    try {
+      const res = await fetch(CSV_URL);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      const rows = parseCSV(text);
+      if (!rows.length) throw new Error("La hoja no contiene filas.");
+
+      // Poblar selectores
+      const { groups, units } = processData(rows);
+      
+      const selGroup = $("filter-group");
+      groups.forEach(g => { selGroup.innerHTML += `<option value="${g}">${g}</option>`; });
+
+      const selUnit = $("filter-unit");
+      units.forEach(u => { selUnit.innerHTML += `<option value="${u.name}">${u.name}</option>`; });
+
+      globalData = processData(rows);
+      
+      // Re-asignar la propiedad "grupo" a cada indicador para el filtrado
+      rows.forEach(row => {
+        const u = row[COLS.unidad] || 'Sin Unidad';
+        const g = row[COLS.grupo] || 'Sin Grupo';
+        const clave = row[COLS.clave];
+        const ind = globalData.unitData[u].indicators.find(i => i.clave === clave);
+        if (ind) ind.grupo = g;
+      });
+
+      applyFilters();
+      
+      $("last-sync").innerText = `Última sincronización: ${new Date().toLocaleTimeString()}`;
+      $("error-banner").classList.add("hidden");
+
+    } catch (err) {
+      console.error(err);
+      const banner = $("error-banner");
+      banner.textContent = "Error al cargar los datos: " + err.message + ". Asegúrate de servir el archivo desde un servidor local (http://) y no como archivo directo (file://).";
+      banner.classList.remove("hidden");
+    }
+  }
+
+  // --- EVENT LISTENERS ---
+  $("filter-group").addEventListener("change", (e) => { activeFilters.grupo = e.target.value; applyFilters(); });
+  $("filter-unit").addEventListener("change", (e) => { activeFilters.unidad = e.target.value; applyFilters(); });
+  $("filter-status").addEventListener("change", (e) => { activeFilters.semaforo = e.target.value; applyFilters(); });
+  $("search-input").addEventListener("input", (e) => { activeFilters.search = e.target.value; applyFilters(); });
+  
+  $("btn-clear").addEventListener("click", () => {
+    activeFilters = { grupo: '', unidad: '', semaforo: '', search: '' };
+    $("filter-form").reset();
+    applyFilters();
+  });
+
+  document.addEventListener("DOMContentLoaded", loadData);
+})();
+</script>
+</body>
+</html>
